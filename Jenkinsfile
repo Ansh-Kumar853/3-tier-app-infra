@@ -57,6 +57,23 @@ pipeline {
         }
       }
     }
+    stage('Deployment preflight') {
+      when { branch 'main' }
+      steps {
+        sh '''set -eu
+          set +x
+          aws sts get-caller-identity
+          aws eks describe-cluster --region "$AWS_REGION" --name "$EKS_CLUSTER_NAME" --query 'cluster.status' --output text | grep -qx ACTIVE
+          aws ecr describe-repositories --region "$AWS_REGION" --repository-names "$ECR_REPOSITORY_PREFIX/backend" "$ECR_REPOSITORY_PREFIX/frontend" >/dev/null
+          aws secretsmanager describe-secret --region "$AWS_REGION" --secret-id "$PLATFORM_DB_SECRET_ID" >/dev/null
+          export KUBECONFIG="$WORKSPACE/.kubeconfig"
+          aws eks update-kubeconfig --region "$AWS_REGION" --name "$EKS_CLUSTER_NAME"
+          kubectl get nodes --request-timeout=15s
+          kubectl -n kube-system get deployment aws-load-balancer-controller >/dev/null
+          echo "Preflight passed: AWS identity, EKS API connectivity, ECR repositories, database secret, and ALB controller are present."
+        '''
+      }
+    }
     stage('Build and push images') {
       when { branch 'main' }
       steps {
@@ -82,6 +99,7 @@ pipeline {
           test -n "$ACM_CERTIFICATE_ARN"
           ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
           REGISTRY="$ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com"
+          export KUBECONFIG="$WORKSPACE/.kubeconfig"
           aws eks update-kubeconfig --region "$AWS_REGION" --name "$EKS_CLUSTER_NAME"
           kubectl get namespace "$K8S_NAMESPACE" >/dev/null 2>&1 || kubectl create namespace "$K8S_NAMESPACE"
 
@@ -118,5 +136,5 @@ pipeline {
       }
     }
   }
-  post { always { cleanWs(deleteDirs: true, notFailBuild: true) } }
+  post { always { sh 'rm -f "$WORKSPACE/.kubeconfig" || true'; cleanWs(deleteDirs: true, notFailBuild: true) } }
 }
