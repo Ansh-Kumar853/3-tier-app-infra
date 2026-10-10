@@ -4,7 +4,7 @@ This configuration provisions a VPC, EKS managed node group, ECR repositories an
 
 ## Before apply
 
-- Terraform >= 1.6 and AWS CLI configured for the target account.
+- Terraform >= 1.10 and AWS CLI configured for the target account.
 - EKS public API CIDRs must be explicitly set to your trusted IP/VPN range. The default intentionally allows no public source IP; use private access/VPN/bastion if you do not have a stable public IP.
 - Create a remote state bucket with versioning, encryption, public access block and tightly scoped IAM. Copy backend.tf.example to backend.tf and replace the bucket name. Do not commit real state or credentials.
 - Supply a strong database password through TF_VAR_db_password or a secure CI secret; state still contains sensitive values and must be protected.
