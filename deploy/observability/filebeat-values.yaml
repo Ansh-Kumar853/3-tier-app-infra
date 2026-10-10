@@ -23,6 +23,7 @@ filebeatConfig:
       hosts: ["https://elasticsearch-master:9200"]
       username: ${ELASTICSEARCH_USERNAME}
       password: ${ELASTICSEARCH_PASSWORD}
+      ssl.certificate_authorities: ["/usr/share/filebeat/config/certs/ca.crt"]
       ssl.verification_mode: certificate
 extraEnvs:
   - name: ELASTICSEARCH_USERNAME
@@ -39,3 +40,11 @@ extraEnvs:
     valueFrom:
       fieldRef:
         fieldPath: spec.nodeName
+extraVolumes:
+  - name: elasticsearch-certs
+    secret:
+      secretName: elasticsearch-master-certs
+extraVolumeMounts:
+  - name: elasticsearch-certs
+    mountPath: /usr/share/filebeat/config/certs
+    readOnly: true
