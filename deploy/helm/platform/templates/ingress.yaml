@@ -7,11 +7,20 @@ metadata:
   annotations:
     alb.ingress.kubernetes.io/scheme: {{ .Values.ingress.scheme | quote }}
     alb.ingress.kubernetes.io/target-type: ip
+    {{- if .Values.ingress.certificateArn }}
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
+    alb.ingress.kubernetes.io/certificate-arn: {{ .Values.ingress.certificateArn | quote }}
+    alb.ingress.kubernetes.io/ssl-redirect: "443"
+    {{- else }}
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80}]'
+    {{- end }}
 spec:
   ingressClassName: {{ .Values.ingress.className }}
   rules:
-    - http:
+    - {{- if .Values.ingress.host }}
+      host: {{ .Values.ingress.host | quote }}
+      {{- end }}
+      http:
         paths:
           - path: /api
             pathType: Prefix
