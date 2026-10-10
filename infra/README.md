@@ -19,4 +19,4 @@ terraform plan
 terraform apply
 aws eks update-kubeconfig --region "$(terraform output -raw region)" --name "$(terraform output -raw cluster_name)"
 
-Install AWS Load Balancer Controller with IRSA before enabling ALB ingress. RDS endpoint is emitted as an output; create the Kubernetes platform-secrets via AWS Secrets Manager and a secret operator, not by committing YAML with values.
+Install AWS Load Balancer Controller with IRSA before enabling ALB ingress. RDS endpoint is emitted as an output. From the repository root, run `DB_ENDPOINT=$(cd infra && terraform output -raw rds_endpoint) bash deploy/cluster/create-db-secret.sh` to create/update the expected AWS Secrets Manager secret securely. The Jenkins pipeline reads JSON key `DATABASE_URL` from secret ID `three-tier-platform/dev/database` and syncs it into the Kubernetes namespace during deploy. Grant only the required Secrets Manager permissions and never commit the secret or Terraform state.
