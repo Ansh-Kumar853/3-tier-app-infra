@@ -5,7 +5,7 @@ RUN npm install --no-audit --no-fund
 COPY index.html ./
 COPY src ./src
 RUN npm run build
-FROM nginx:1.27-alpine AS runtime
+FROM nginx:1.28-alpine AS runtime
 RUN rm -f /etc/nginx/conf.d/default.conf && addgroup -S web && adduser -S -G web web && mkdir -p /var/cache/nginx /var/run /var/log/nginx && chown -R web:web /var/cache/nginx /var/run /var/log/nginx /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build --chown=web:web /src/dist /usr/share/nginx/html
