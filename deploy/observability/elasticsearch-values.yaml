@@ -1,0 +1,25 @@
+replicas: 3
+minimumMasterNodes: 2
+clusterHealthCheckParams: "wait_for_status=yellow&timeout=1s"
+esJavaOpts: "-Xms1g -Xmx1g"
+resources:
+  requests:
+    cpu: "500m"
+    memory: "2Gi"
+  limits:
+    cpu: "2"
+    memory: "2Gi"
+volumeClaimTemplate:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: "gp3"
+  resources:
+    requests:
+      storage: 50Gi
+protocol: https
+httpPort: 9200
+transportPort: 9300
+service:
+  type: ClusterIP
+antiAffinity: "hard"
+podSecurityContext:
+  fsGroup: 1000
