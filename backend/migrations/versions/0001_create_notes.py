@@ -20,9 +20,8 @@ def upgrade() -> None:
         "notes",
         sa.Column("id", sa.Integer(), primary_key=True, nullable=False),
         sa.Column("title", sa.String(length=160), nullable=False),
-        sa.Column("body", sa.Text(), nullable=False, server_default=""),
+        sa.Column("body", sa.Text(), nullable=False),
     )
-    op.alter_column("notes", "body", server_default=None)
 
 
 def downgrade() -> None:
