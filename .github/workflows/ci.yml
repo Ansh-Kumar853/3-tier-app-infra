@@ -16,6 +16,8 @@ jobs:
           python-version: "3.12"
       - run: pip install -r backend/requirements-dev.txt
       - run: cd backend && PYTHONPATH=. pytest -q
+      - name: Verify versioned database migration
+        run: cd backend && DATABASE_URL=sqlite:////tmp/platform-migration-ci.db APP_ENV=development alembic upgrade head && DATABASE_URL=sqlite:////tmp/platform-migration-ci.db APP_ENV=development alembic current
   frontend:
     runs-on: ubuntu-latest
     steps:
@@ -46,6 +48,8 @@ jobs:
       - run: helm lint deploy/helm/platform
       - run: helm template platform deploy/helm/platform --set backend.image=example/backend:ci --set frontend.image=example/frontend:ci > /tmp/rendered.yaml
       - run: helm template platform deploy/helm/platform --set backend.image=example/backend:ci --set frontend.image=example/frontend:ci --set ingress.host=app.example.com --set ingress.certificateArn=arn:aws:acm:ap-south-1:123456789012:certificate/00000000-0000-0000-0000-000000000000 > /tmp/rendered-tls.yaml
+      - name: Verify migration Job is rendered
+        run: grep -q "name: platform-db-migrate" /tmp/rendered-tls.yaml
   terraform:
     runs-on: ubuntu-latest
     steps:
