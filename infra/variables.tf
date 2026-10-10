@@ -24,7 +24,7 @@ variable "eks_node_instance_types" {
 }
 variable "desired_nodes" {
   type    = number
-  default = 2
+  default = 3
 }
 variable "max_nodes" {
   type    = number
