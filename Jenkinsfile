@@ -105,6 +105,7 @@ pipeline {
 
           helm upgrade --install platform ./deploy/helm/platform --namespace "$K8S_NAMESPACE" \
             --set-string namespace="$K8S_NAMESPACE" \
+            --set ingress.enabled=true \
             --set-string backend.image="$REGISTRY/$ECR_REPOSITORY_PREFIX/backend:$IMAGE_TAG" \
             --set-string frontend.image="$REGISTRY/$ECR_REPOSITORY_PREFIX/frontend:$IMAGE_TAG" \
             --set-string ingress.host="$APP_HOSTNAME" \
