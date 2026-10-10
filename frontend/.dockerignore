@@ -4,3 +4,5 @@ dist/
 .env.*
 .git/
 npm-debug.log*
+coverage/
+*.log
