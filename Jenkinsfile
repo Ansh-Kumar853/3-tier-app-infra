@@ -15,14 +15,14 @@ pipeline {
   stages {
     stage('Backend checks') {
       steps {
-        sh 'python3 -m pip install -r backend/requirements.txt -r backend/requirements-dev.txt'
+        sh 'python3 -m pip install -r backend/requirements-dev.txt'
         sh 'cd backend && python3 -m pytest -q'
       }
     }
     stage('Frontend checks') {
       steps {
         dir('frontend') {
-          sh 'npm ci --no-audit --no-fund'
+          sh 'npm install --no-audit --no-fund'
           sh 'npm run build'
         }
       }
@@ -51,6 +51,7 @@ pipeline {
           REGISTRY="$ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com"
           aws eks update-kubeconfig --region "$AWS_REGION" --name "$EKS_CLUSTER_NAME"
           kubectl get namespace "$K8S_NAMESPACE" >/dev/null 2>&1 || kubectl create namespace "$K8S_NAMESPACE"
+          kubectl get secret platform-secrets -n "$K8S_NAMESPACE" >/dev/null
           helm upgrade --install platform ./deploy/helm/platform --namespace "$K8S_NAMESPACE" \
             --set namespace="$K8S_NAMESPACE" \
             --set backend.image="$REGISTRY/three-tier-platform-dev/backend:$IMAGE_TAG" \
