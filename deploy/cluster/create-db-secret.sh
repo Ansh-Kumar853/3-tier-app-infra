@@ -22,7 +22,7 @@ user = quote(os.environ["DB_USERNAME"], safe="")
 password = quote(os.environ["DB_PASSWORD"], safe="")
 database = quote(os.environ["DB_NAME"], safe="")
 host = os.environ["DB_ENDPOINT"]
-print(f"postgresql+psycopg://{user}:{password}@{host}:5432/{database}")
+print(f"postgresql+psycopg://{user}:{password}@{host}:5432/{database}?sslmode=require")
 PY
 )"
 export DATABASE_URL
