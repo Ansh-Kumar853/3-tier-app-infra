@@ -128,7 +128,7 @@ pipeline {
             --set-string frontend.image="$REGISTRY/$ECR_REPOSITORY_PREFIX/frontend:$IMAGE_TAG" \
             --set-string ingress.host="$APP_HOSTNAME" \
             --set-string ingress.certificateArn="$ACM_CERTIFICATE_ARN" \
-            --wait --timeout 12m
+            --atomic --cleanup-on-fail --history-max 10 --wait --timeout 12m
           kubectl rollout status deployment/backend -n "$K8S_NAMESPACE" --timeout=5m
           kubectl rollout status deployment/frontend -n "$K8S_NAMESPACE" --timeout=5m
           kubectl get ingress platform -n "$K8S_NAMESPACE"
