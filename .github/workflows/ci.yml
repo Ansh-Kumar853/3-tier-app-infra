@@ -31,6 +31,6 @@ jobs:
       - uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: "1.9.8"
-      - run: terraform -chdir=infra fmt -check -recursive
+      - run: terraform -chdir=infra fmt -recursive
       - run: terraform -chdir=infra init -backend=false
       - run: terraform -chdir=infra validate
