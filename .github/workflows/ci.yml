@@ -30,7 +30,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: "1.9.8"
+          terraform_version: "1.10.5"
       - run: terraform -chdir=infra fmt -recursive
       - run: terraform -chdir=infra init -backend=false
       - run: terraform -chdir=infra validate
