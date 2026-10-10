@@ -1,0 +1,7 @@
+.git
+.terraform
+**/__pycache__
+**/.venv
+**/node_modules
+.env
+*.tfstate*
