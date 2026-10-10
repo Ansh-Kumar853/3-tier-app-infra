@@ -1,5 +1,9 @@
 pipeline {
   agent any
+  parameters {
+    string(name: 'APP_HOSTNAME', defaultValue: '', description: 'DNS hostname for HTTPS ingress; leave blank only for temporary HTTP testing')
+    string(name: 'ACM_CERTIFICATE_ARN', defaultValue: '', description: 'ACM certificate ARN in the same region as the ALB')
+  }
   options {
     timestamps()
     disableConcurrentBuilds()
@@ -40,7 +44,7 @@ pipeline {
       }
     }
     stage('Build and push images') {
-      when { branch 'main' }
+      when { expression { env.BRANCH_NAME == 'main' || env.GIT_BRANCH == 'origin/main' || env.GIT_BRANCH == 'main' } }
       steps {
         sh '''set -eu
           ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
@@ -83,11 +87,25 @@ pipeline {
           rm -f "$SECRET_FILE"
           trap - EXIT
 
-          helm upgrade --install platform ./deploy/helm/platform --namespace "$K8S_NAMESPACE" \
-            --set-string namespace="$K8S_NAMESPACE" \
-            --set-string backend.image="$REGISTRY/$ECR_REPOSITORY_PREFIX/backend:$IMAGE_TAG" \
-            --set-string frontend.image="$REGISTRY/$ECR_REPOSITORY_PREFIX/frontend:$IMAGE_TAG" \
-            --wait --timeout 8m
+          if [ -n "$APP_HOSTNAME" ] && [ -n "$ACM_CERTIFICATE_ARN" ]; then
+            helm upgrade --install platform ./deploy/helm/platform --namespace "$K8S_NAMESPACE" \
+              --set-string namespace="$K8S_NAMESPACE" \
+              --set-string backend.image="$REGISTRY/$ECR_REPOSITORY_PREFIX/backend:$IMAGE_TAG" \
+              --set-string frontend.image="$REGISTRY/$ECR_REPOSITORY_PREFIX/frontend:$IMAGE_TAG" \
+              --set-string ingress.host="$APP_HOSTNAME" \
+              --set-string ingress.certificateArn="$ACM_CERTIFICATE_ARN" \
+              --wait --timeout 8m
+          elif [ -z "$APP_HOSTNAME" ] && [ -z "$ACM_CERTIFICATE_ARN" ]; then
+            echo "WARNING: deploying HTTP-only ingress for temporary testing; configure hostname and ACM certificate for production."
+            helm upgrade --install platform ./deploy/helm/platform --namespace "$K8S_NAMESPACE" \
+              --set-string namespace="$K8S_NAMESPACE" \
+              --set-string backend.image="$REGISTRY/$ECR_REPOSITORY_PREFIX/backend:$IMAGE_TAG" \
+              --set-string frontend.image="$REGISTRY/$ECR_REPOSITORY_PREFIX/frontend:$IMAGE_TAG" \
+              --wait --timeout 8m
+          else
+            echo "APP_HOSTNAME and ACM_CERTIFICATE_ARN must either both be set or both be empty." >&2
+            exit 1
+          fi
           kubectl rollout status deployment/backend -n "$K8S_NAMESPACE" --timeout=5m
           kubectl rollout status deployment/frontend -n "$K8S_NAMESPACE" --timeout=5m
           kubectl get ingress platform -n "$K8S_NAMESPACE"
