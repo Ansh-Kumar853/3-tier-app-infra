@@ -6,3 +6,7 @@ venv/
 .env
 *.db
 .git/
+tests/
+requirements-dev.txt
+.coverage
+htmlcov/
