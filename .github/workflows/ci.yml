@@ -16,6 +16,8 @@ jobs:
           python-version: "3.12"
       - run: pip install -r backend/requirements-dev.txt
       - run: cd backend && PYTHONPATH=. pytest -q
+      - name: Audit Python dependencies
+        run: python -m pip install pip-audit && pip-audit -r backend/requirements.txt
       - name: Verify versioned database migration
         run: cd backend && DATABASE_URL=sqlite:////tmp/platform-migration-ci.db APP_ENV=development alembic upgrade head && DATABASE_URL=sqlite:////tmp/platform-migration-ci.db APP_ENV=development alembic current
   frontend:
