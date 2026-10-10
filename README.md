@@ -34,7 +34,7 @@ Open http://localhost:8080. API health: http://localhost:8000/healthz. API docs:
 
 ## Provision AWS
 
-1. Install Terraform >= 1.6, AWS CLI, kubectl and Helm. Authenticate with an IAM role/SSO profile using least privilege.
+1. Install Terraform >= 1.10, AWS CLI, kubectl and Helm. Authenticate with an IAM role/SSO profile using least privilege.
 2. Read infra/README.md and infra/terraform.tfvars.example. Set your trusted EKS API CIDR in a private tfvars file. The public endpoint is intentionally not open to the internet by default.
 3. Configure remote Terraform state using infra/backend.tf.example. Use a private, encrypted, versioned S3 bucket and restricted IAM access. State can contain database credentials.
 4. Set TF_VAR_db_password through a secure secret mechanism, not in Git. From infra/, run terraform init, terraform fmt -recursive, terraform validate, terraform plan, and then terraform apply.
