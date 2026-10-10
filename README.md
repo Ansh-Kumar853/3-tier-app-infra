@@ -59,8 +59,7 @@ See deploy/observability/README.md. Elastic Stack is a separate deployment and i
 - Configure HTTPS with a real ACM certificate and DNS hostname before public use.
 - Database schema is versioned with Alembic; review each migration and test upgrade/rollback behavior before production changes.
 - Test RDS restore, Elastic snapshots, alerts, retention and disaster recovery.
-- Add enforced container/dependency vulnerability scanning and SBOM generation; review findings before release.
-- Generate and retain an SBOM for release images.
+- GitHub Actions audits Python and npm dependencies, scans container images for high/critical vulnerabilities, and publishes SPDX SBOM artifacts; review and remediate findings before release.
 - Run end-to-end, load, failover and restore tests in a non-production AWS environment.
 - Add production alerting, log retention/ILM policies, secret rotation, backup monitoring and a documented incident/rollback process.
 - Add a staged rollout/approval process for production and a rollback procedure.
