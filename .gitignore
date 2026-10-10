@@ -6,3 +6,8 @@ node_modules/
 __pycache__/
 .venv/
 dist/
+infra/backend.tf
+*.tfbackend
+kubeconfig*
+*.pem
+secrets*.yaml
