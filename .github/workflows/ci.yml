@@ -30,6 +30,12 @@ jobs:
       - uses: actions/checkout@v4
       - run: docker build --pull -t platform-backend:ci ./backend
       - run: docker build --pull -t platform-frontend:ci ./frontend
+  shell:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check shell script syntax
+        run: bash -n deploy/cluster/install-addons.sh deploy/cluster/create-db-secret.sh deploy/observability/install.sh
   helm:
     runs-on: ubuntu-latest
     steps:
@@ -39,6 +45,7 @@ jobs:
           version: v3.17.1
       - run: helm lint deploy/helm/platform
       - run: helm template platform deploy/helm/platform --set backend.image=example/backend:ci --set frontend.image=example/frontend:ci > /tmp/rendered.yaml
+      - run: helm template platform deploy/helm/platform --set backend.image=example/backend:ci --set frontend.image=example/frontend:ci --set ingress.host=app.example.com --set ingress.certificateArn=arn:aws:acm:ap-south-1:123456789012:certificate/00000000-0000-0000-0000-000000000000 > /tmp/rendered-tls.yaml
   terraform:
     runs-on: ubuntu-latest
     steps:
