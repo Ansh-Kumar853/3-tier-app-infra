@@ -1,0 +1,11 @@
+variable "aws_region" { type = string, default = "ap-south-1" }
+variable "project_name" { type = string, default = "three-tier-platform" }
+variable "environment" { type = string, default = "dev" }
+variable "vpc_cidr" { type = string, default = "10.40.0.0/16" }
+variable "kubernetes_version" { type = string, default = "1.31" }
+variable "eks_node_instance_types" { type = list(string), default = ["t3.large"] }
+variable "desired_nodes" { type = number, default = 2 }
+variable "max_nodes" { type = number, default = 4 }
+variable "db_name" { type = string, default = "platform" }
+variable "db_username" { type = string, default = "platformadmin" }
+variable "db_password" { type = string, sensitive = true }
