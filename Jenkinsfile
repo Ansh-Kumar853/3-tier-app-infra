@@ -1,8 +1,8 @@
 pipeline {
   agent any
   parameters {
-    string(name: 'APP_HOSTNAME', defaultValue: '', description: 'DNS hostname for HTTPS ingress; leave blank only for temporary HTTP testing')
-    string(name: 'ACM_CERTIFICATE_ARN', defaultValue: '', description: 'ACM certificate ARN in the same region as the ALB')
+    string(name: 'APP_HOSTNAME', defaultValue: '', description: 'Required DNS hostname for production HTTPS ingress')
+    string(name: 'ACM_CERTIFICATE_ARN', defaultValue: '', description: 'Required ACM certificate ARN in ap-south-1')
   }
   options {
     timestamps()
@@ -29,10 +29,24 @@ pipeline {
         }
       }
     }
+    stage('Validate production configuration') {
+      when { branch 'main' }
+      steps {
+        script {
+          if (!params.APP_HOSTNAME?.trim() || !params.ACM_CERTIFICATE_ARN?.trim()) {
+            error('Production deployment requires APP_HOSTNAME and ACM_CERTIFICATE_ARN; HTTP-only deployment is disabled.')
+          }
+          if (!params.ACM_CERTIFICATE_ARN.startsWith("arn:aws:acm:${env.AWS_REGION}:")) {
+            error("ACM certificate must be in ${env.AWS_REGION}, the same region as the ALB.")
+          }
+        }
+      }
+    }
     stage('Backend checks') {
       steps {
         sh 'python3 -m pip install -r backend/requirements-dev.txt'
         sh 'cd backend && PYTHONPATH=. python3 -m pytest -q'
+        sh 'cd backend && DATABASE_URL=sqlite:////tmp/platform-migration-ci.db APP_ENV=development alembic upgrade head'
       }
     }
     stage('Frontend checks') {
@@ -44,7 +58,7 @@ pipeline {
       }
     }
     stage('Build and push images') {
-      when { expression { env.BRANCH_NAME == 'main' || env.GIT_BRANCH == 'origin/main' || env.GIT_BRANCH == 'main' } }
+      when { branch 'main' }
       steps {
         sh '''set -eu
           ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
@@ -64,13 +78,15 @@ pipeline {
       steps {
         sh '''set -eu
           set +x
+          test -n "$APP_HOSTNAME"
+          test -n "$ACM_CERTIFICATE_ARN"
           ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
           REGISTRY="$ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com"
           aws eks update-kubeconfig --region "$AWS_REGION" --name "$EKS_CLUSTER_NAME"
           kubectl get namespace "$K8S_NAMESPACE" >/dev/null 2>&1 || kubectl create namespace "$K8S_NAMESPACE"
 
+          # Jenkins agent must have private network connectivity to the EKS API.
           # Secret Manager secret must be JSON containing DATABASE_URL.
-          # Never print the secret or commit it to the repository.
           SECRET_JSON=$(aws secretsmanager get-secret-value \
             --region "$AWS_REGION" --secret-id "$PLATFORM_DB_SECRET_ID" \
             --query SecretString --output text)
@@ -78,7 +94,7 @@ pipeline {
           unset SECRET_JSON
           test -n "$DATABASE_URL"
           SECRET_FILE=$(mktemp)
-          trap 'rm -f "$SECRET_FILE"' EXIT
+          trap 'rm -f "$SECRET_FILE"; unset DATABASE_URL' EXIT
           chmod 600 "$SECRET_FILE"
           printf 'DATABASE_URL=%s\n' "$DATABASE_URL" > "$SECRET_FILE"
           unset DATABASE_URL
@@ -87,25 +103,13 @@ pipeline {
           rm -f "$SECRET_FILE"
           trap - EXIT
 
-          if [ -n "$APP_HOSTNAME" ] && [ -n "$ACM_CERTIFICATE_ARN" ]; then
-            helm upgrade --install platform ./deploy/helm/platform --namespace "$K8S_NAMESPACE" \
-              --set-string namespace="$K8S_NAMESPACE" \
-              --set-string backend.image="$REGISTRY/$ECR_REPOSITORY_PREFIX/backend:$IMAGE_TAG" \
-              --set-string frontend.image="$REGISTRY/$ECR_REPOSITORY_PREFIX/frontend:$IMAGE_TAG" \
-              --set-string ingress.host="$APP_HOSTNAME" \
-              --set-string ingress.certificateArn="$ACM_CERTIFICATE_ARN" \
-              --wait --timeout 8m
-          elif [ -z "$APP_HOSTNAME" ] && [ -z "$ACM_CERTIFICATE_ARN" ]; then
-            echo "WARNING: deploying HTTP-only ingress for temporary testing; configure hostname and ACM certificate for production."
-            helm upgrade --install platform ./deploy/helm/platform --namespace "$K8S_NAMESPACE" \
-              --set-string namespace="$K8S_NAMESPACE" \
-              --set-string backend.image="$REGISTRY/$ECR_REPOSITORY_PREFIX/backend:$IMAGE_TAG" \
-              --set-string frontend.image="$REGISTRY/$ECR_REPOSITORY_PREFIX/frontend:$IMAGE_TAG" \
-              --wait --timeout 8m
-          else
-            echo "APP_HOSTNAME and ACM_CERTIFICATE_ARN must either both be set or both be empty." >&2
-            exit 1
-          fi
+          helm upgrade --install platform ./deploy/helm/platform --namespace "$K8S_NAMESPACE" \
+            --set-string namespace="$K8S_NAMESPACE" \
+            --set-string backend.image="$REGISTRY/$ECR_REPOSITORY_PREFIX/backend:$IMAGE_TAG" \
+            --set-string frontend.image="$REGISTRY/$ECR_REPOSITORY_PREFIX/frontend:$IMAGE_TAG" \
+            --set-string ingress.host="$APP_HOSTNAME" \
+            --set-string ingress.certificateArn="$ACM_CERTIFICATE_ARN" \
+            --wait --timeout 12m
           kubectl rollout status deployment/backend -n "$K8S_NAMESPACE" --timeout=5m
           kubectl rollout status deployment/frontend -n "$K8S_NAMESPACE" --timeout=5m
           kubectl get ingress platform -n "$K8S_NAMESPACE"
