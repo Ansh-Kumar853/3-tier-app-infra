@@ -24,6 +24,21 @@ jobs:
         with:
           node-version: "22"
       - run: cd frontend && npm install --no-audit --no-fund && npm run build
+  containers:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build --pull -t platform-backend:ci ./backend
+      - run: docker build --pull -t platform-frontend:ci ./frontend
+  helm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+        with:
+          version: v3.17.1
+      - run: helm lint deploy/helm/platform
+      - run: helm template platform deploy/helm/platform --set backend.image=example/backend:ci --set frontend.image=example/frontend:ci > /tmp/rendered.yaml
   terraform:
     runs-on: ubuntu-latest
     steps:
