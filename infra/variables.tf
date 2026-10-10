@@ -1,11 +1,40 @@
-variable "aws_region" { type = string, default = "ap-south-1" }
-variable "project_name" { type = string, default = "three-tier-platform" }
-variable "environment" { type = string, default = "dev" }
-variable "vpc_cidr" { type = string, default = "10.40.0.0/16" }
-variable "kubernetes_version" { type = string, default = "1.31" }
-variable "eks_node_instance_types" { type = list(string), default = ["t3.large"] }
-variable "desired_nodes" { type = number, default = 2 }
-variable "max_nodes" { type = number, default = 4 }
-variable "db_name" { type = string, default = "platform" }
-variable "db_username" { type = string, default = "platformadmin" }
-variable "db_password" { type = string, sensitive = true }
+variable "aws_region" { type = string
+  default = "ap-south-1"
+}
+variable "project_name" { type = string
+  default = "three-tier-platform"
+}
+variable "environment" { type = string
+  default = "dev"
+}
+variable "vpc_cidr" { type = string
+  default = "10.40.0.0/16"
+}
+variable "kubernetes_version" { type = string
+  default = "1.31"
+}
+variable "eks_node_instance_types" { type = list(string)
+  default = ["t3.large"]
+}
+variable "desired_nodes" { type = number
+  default = 2
+}
+variable "max_nodes" { type = number
+  default = 4
+}
+variable "db_name" { type = string
+  default = "platform"
+}
+variable "db_username" { type = string
+  default = "platformadmin"
+}
+variable "db_password" {
+  type = string
+  sensitive = true
+  description = "Database password. Prefer injecting from a secret manager; Terraform state must be protected."
+}
+variable "eks_public_access_cidrs" {
+  type = list(string)
+  description = "Trusted public CIDRs allowed to reach the EKS API. Set this to your office/VPN IP range."
+  default = []
+}
