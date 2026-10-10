@@ -2,7 +2,7 @@
 
 A full-stack reference project with a React frontend, FastAPI API, PostgreSQL database, Terraform-managed AWS infrastructure, Amazon EKS, Jenkins CI/CD, Helm, Docker, and Elastic Stack log collection.
 
-**Honest status:** The repository includes production-oriented controls and CI checks, but no live AWS deployment, load test, security assessment, restore drill, or ELK runtime validation has been performed from this chat. Do not treat this as production-certified until the deployment checklist is completed in your AWS account.
+**Honest status:** The repository includes production-oriented controls and CI checks, but this session has not verified the app deployment against your existing AWS/EKS environment, nor completed load tests, a security assessment, restore drills, or ELK runtime validation. Passing CI does not mean the live service is production-certified.
 
 ## Architecture
 
@@ -32,15 +32,20 @@ Install Docker and Docker Compose, then run: docker compose up --build
 
 Open http://localhost:8080. API health: http://localhost:8000/healthz. API docs: http://localhost:8000/docs. Local database credentials in Compose are for local development only.
 
-## Provision AWS
+## Provision and connect to AWS
 
-1. Install Terraform >= 1.10, AWS CLI, kubectl and Helm. Authenticate with an IAM role/SSO profile using least privilege.
-2. Read infra/README.md and infra/terraform.tfvars.example. Set your trusted EKS API CIDR in a private tfvars file. The public endpoint is intentionally not open to the internet by default.
-3. Configure remote Terraform state using infra/backend.tf.example. Use a private, encrypted, versioned S3 bucket and restricted IAM access. State can contain database credentials.
-4. Set TF_VAR_db_password through a secure secret mechanism, not in Git. Keep that exact password available for the Secrets Manager bootstrap step below. From infra/, run terraform init, terraform fmt -recursive, terraform validate, terraform plan, and then terraform apply.
-5. Install AWS Load Balancer Controller with IRSA and verify subnet discovery tags before using the ALB ingress.
-6. Configure the Kubernetes Secret platform-secrets with DATABASE_URL using AWS Secrets Manager + External Secrets Operator (recommended). Do not commit a Kubernetes Secret with real values.
-7. Build and deploy images through Jenkins. The Jenkins agent needs Python 3, Node.js 22, Docker, AWS CLI, kubectl, Helm and the Workspace Cleanup plugin. Configure an IAM role with ECR push permissions and EKS access/RBAC. Set the pipeline's cluster, region and repository names to match Terraform outputs.
+**If your EKS cluster already exists, do not run `terraform apply` blindly.** First verify that this repository's Terraform state manages those exact resources. If it does not, reconcile/import the existing resources or use a reviewed migration plan; otherwise Terraform may try to create duplicate resources.
+
+1. Install Terraform >= 1.10, AWS CLI, kubectl and Helm. Authenticate using a least-privilege IAM role or SSO profile.
+2. Confirm the intended region, cluster name, ECR repositories, RDS endpoint, and VPC IDs match the Jenkinsfile and Terraform outputs. The defaults use `ap-south-1` and cluster `three-tier-platform-dev`.
+3. Protect remote Terraform state with an encrypted, versioned private S3 bucket and tightly scoped IAM. State may contain the database password.
+4. For a new infrastructure deployment only, set `TF_VAR_db_password` through a secure secret mechanism and review `terraform plan` before applying.
+5. Install the AWS Load Balancer Controller with IRSA and verify public subnet discovery tags. The deployment preflight now checks that the controller deployment exists.
+6. Create/update the Secrets Manager secret expected by Jenkins: `DB_ENDPOINT=$(cd infra && terraform output -raw rds_endpoint) bash deploy/cluster/create-db-secret.sh`. Enter the **same database password** that was used for the RDS instance. The script stores a TLS-enabled `DATABASE_URL`; do not put secrets in Git or logs.
+7. Configure Jenkins as a multibranch Pipeline from SCM. Its agent needs Python 3, Node.js 22, Docker, AWS CLI, kubectl, Helm, jq and the Workspace Cleanup plugin, plus least-privilege ECR push, Secrets Manager read, and EKS deployment permissions.
+8. The EKS API is private by default. The Jenkins agent must run inside the VPC or have private network connectivity to the cluster endpoint. The preflight stage checks AWS identity, cluster status/connectivity, ECR repositories, the database secret and the ALB controller before images are pushed.
+9. On the `main` branch, provide `APP_HOSTNAME` and an ACM certificate ARN from `ap-south-1`. The pipeline intentionally refuses HTTP-only deployment. Ensure DNS points to the ALB and the certificate covers the hostname.
+10. The Helm pre-install/pre-upgrade Job runs `alembic upgrade head` before application pods roll out. Review migrations before release and verify the rollout, API readiness, TLS endpoint and logs after deployment.
 
 ## Install Elastic Stack
 
