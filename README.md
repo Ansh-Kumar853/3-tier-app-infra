@@ -55,7 +55,7 @@ See deploy/observability/README.md. Elastic Stack is a separate deployment and i
 
 - Restrict the EKS API to trusted CIDRs and enable private connectivity.
 - Keep Terraform state encrypted, versioned and tightly permissioned.
-- Use Secrets Manager and a secret operator for database credentials.
+- Store the database connection in AWS Secrets Manager; Jenkins syncs it to the application namespace only during deployment.
 - Configure HTTPS with a real ACM certificate and DNS hostname before public use.
 - Database schema is versioned with Alembic; review each migration and test upgrade/rollback behavior before production changes.
 - Test RDS restore, Elastic snapshots, alerts, retention and disaster recovery.
