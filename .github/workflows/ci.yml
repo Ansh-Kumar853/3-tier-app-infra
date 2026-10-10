@@ -32,6 +32,24 @@ jobs:
       - uses: actions/checkout@v4
       - run: docker build --pull -t platform-backend:ci ./backend
       - run: docker build --pull -t platform-frontend:ci ./frontend
+      - name: Scan backend image for high and critical vulnerabilities
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: platform-backend:ci
+          format: table
+          exit-code: "1"
+          ignore-unfixed: true
+          vuln-type: os,library
+          severity: HIGH,CRITICAL
+      - name: Scan frontend image for high and critical vulnerabilities
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: platform-frontend:ci
+          format: table
+          exit-code: "1"
+          ignore-unfixed: true
+          vuln-type: os,library
+          severity: HIGH,CRITICAL
   shell:
     runs-on: ubuntu-latest
     steps:
