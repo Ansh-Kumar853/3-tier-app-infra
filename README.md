@@ -59,7 +59,10 @@ See deploy/observability/README.md. Elastic Stack is a separate deployment and i
 - Configure HTTPS with a real ACM certificate and DNS hostname before public use.
 - Database schema is versioned with Alembic; review each migration and test upgrade/rollback behavior before production changes.
 - Test RDS restore, Elastic snapshots, alerts, retention and disaster recovery.
-- Add enforced container/dependency vulnerability scanning and SBOM generation; review findings before release.\n- Run end-to-end, load, failover and restore tests in a non-production AWS environment.\n- Add production alerting, log retention/ILM policies, secret rotation, backup monitoring and a documented incident/rollback process.
+- Add enforced container/dependency vulnerability scanning and SBOM generation; review findings before release.
+- Generate and retain an SBOM for release images.
+- Run end-to-end, load, failover and restore tests in a non-production AWS environment.
+- Add production alerting, log retention/ILM policies, secret rotation, backup monitoring and a documented incident/rollback process.
 - Add a staged rollout/approval process for production and a rollback procedure.
 - Estimate costs before apply: EKS nodes, NAT gateways, Multi-AZ RDS, load balancers and Elastic storage all incur charges.
 
