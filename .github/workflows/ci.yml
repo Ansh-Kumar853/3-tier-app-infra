@@ -68,6 +68,8 @@ jobs:
       - run: helm template platform deploy/helm/platform --set backend.image=example/backend:ci --set frontend.image=example/frontend:ci --set ingress.enabled=true --set ingress.host=app.example.com --set ingress.certificateArn=arn:aws:acm:ap-south-1:123456789012:certificate/00000000-0000-0000-0000-000000000000 > /tmp/rendered-tls.yaml
       - name: Verify migration Job is rendered
         run: grep -q "name: platform-db-migrate" /tmp/rendered-tls.yaml
+      - name: Reject ingress without a hostname and TLS certificate
+        run: if helm template platform deploy/helm/platform --set backend.image=example/backend:ci --set frontend.image=example/frontend:ci --set ingress.enabled=true >/tmp/invalid-ingress.yaml 2>/dev/null; then echo "Ingress unexpectedly rendered without TLS settings" >&2; exit 1; fi
   terraform:
     runs-on: ubuntu-latest
     steps:
