@@ -34,7 +34,7 @@ pipeline {
     stage('Frontend checks') {
       steps {
         dir('frontend') {
-          sh 'npm ci --no-audit --no-fund'
+          sh 'npm install --no-audit --no-fund'
           sh 'npm run build'
         }
       }
