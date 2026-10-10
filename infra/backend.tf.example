@@ -1,4 +1,5 @@
-# Copy to backend.tf and configure the bucket/table first.
+# Copy to backend.tf and replace the bucket name after creating it securely.
+# The bucket must have versioning, encryption and public access blocking enabled.
 terraform {
   backend "s3" {
     bucket       = "REPLACE_WITH_UNIQUE_STATE_BUCKET"
