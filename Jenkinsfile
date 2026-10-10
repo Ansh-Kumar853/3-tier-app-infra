@@ -10,9 +10,14 @@ pipeline {
     AWS_REGION = 'ap-south-1'
     EKS_CLUSTER_NAME = 'three-tier-platform-dev'
     K8S_NAMESPACE = 'platform'
-    IMAGE_TAG = "${BUILD_NUMBER}-${GIT_COMMIT.take(7)}"
+    IMAGE_TAG = ''
   }
   stages {
+    stage('Initialize') {
+      steps {
+        script { env.IMAGE_TAG = "${env.BUILD_NUMBER}-${env.GIT_COMMIT.take(7)}" }
+      }
+    }
     stage('Backend checks') {
       steps {
         sh 'python3 -m pip install -r backend/requirements-dev.txt'
