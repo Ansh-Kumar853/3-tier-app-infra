@@ -39,8 +39,8 @@ module "eks" {
   version = "20.37.1"
   cluster_name = local.name
   cluster_version = var.kubernetes_version
-  cluster_endpoint_public_access = true
-  cluster_endpoint_public_access_cidrs = length(var.eks_public_access_cidrs) > 0 ? var.eks_public_access_cidrs : ["127.0.0.1/32"]
+  cluster_endpoint_public_access = length(var.eks_public_access_cidrs) > 0
+  cluster_endpoint_public_access_cidrs = var.eks_public_access_cidrs
   cluster_endpoint_private_access = true
   vpc_id = module.vpc.vpc_id
   subnet_ids = module.vpc.private_subnets
