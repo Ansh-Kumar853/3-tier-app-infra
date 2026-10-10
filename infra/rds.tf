@@ -29,6 +29,7 @@ resource "aws_db_instance" "this" {
   instance_class = "db.t4g.medium"
   allocated_storage = 30
   max_allocated_storage = 100
+  storage_type = "gp3"
   db_name = var.db_name
   username = var.db_username
   password = var.db_password
@@ -37,6 +38,9 @@ resource "aws_db_instance" "this" {
   vpc_security_group_ids = [aws_security_group.rds.id]
   publicly_accessible = false
   storage_encrypted = true
+  enabled_cloudwatch_logs_exports = ["postgresql", "upgrade"]
+  performance_insights_enabled = true
+  performance_insights_retention_period = 7
   backup_retention_period = 7
   deletion_protection = true
   skip_final_snapshot = false
