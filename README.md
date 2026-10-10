@@ -2,7 +2,7 @@
 
 A full-stack reference project with a React frontend, FastAPI API, PostgreSQL database, Terraform-managed AWS infrastructure, Amazon EKS, Jenkins CI/CD, Helm, Docker, and Elastic Stack log collection.
 
-**Honest status:** Files and pipeline templates are committed to this repository. No AWS resources have been created and no real deployment has been run from this chat. Run the validation and deployment steps below in your own AWS/Jenkins environment before treating it as production-ready.
+**Honest status:** The repository includes production-oriented controls and CI checks, but no live AWS deployment, load test, security assessment, restore drill, or ELK runtime validation has been performed from this chat. Do not treat this as production-certified until the deployment checklist is completed in your AWS account.
 
 ## Architecture
 
@@ -10,7 +10,7 @@ A full-stack reference project with a React frontend, FastAPI API, PostgreSQL da
 - API: FastAPI REST endpoints for notes, health, and readiness.
 - Database: Private, encrypted, Multi-AZ Amazon RDS for PostgreSQL.
 - Infrastructure: Terraform VPC with public/private/database subnets, EKS managed node group, ECR repositories and lifecycle policies.
-- Deployment: Helm chart with probes, resource limits, HPA, PodDisruptionBudgets and a backend ingress NetworkPolicy.
+- Deployment: Helm chart with probes, resource limits, HPA, PodDisruptionBudgets, restricted pod security, backend ingress NetworkPolicy, and a pre-install/pre-upgrade database migration Job.
 - CI/CD: Jenkins tests, builds immutable image tags, pushes to ECR and deploys to EKS on main.
 - Logs: Elasticsearch, Kibana and Filebeat Helm values/scripts under deploy/observability.
 - CI validation: GitHub Actions for backend tests, frontend build and Terraform validation.
@@ -52,9 +52,9 @@ See deploy/observability/README.md. Elastic Stack is a separate deployment and i
 - Keep Terraform state encrypted, versioned and tightly permissioned.
 - Use Secrets Manager and a secret operator for database credentials.
 - Configure HTTPS with a real ACM certificate and DNS hostname before public use.
-- Add Alembic migrations; the demo currently creates tables at application startup.
+- Database schema is versioned with Alembic; review each migration and test upgrade/rollback behavior before production changes.
 - Test RDS restore, Elastic snapshots, alerts, retention and disaster recovery.
-- Scan container images/dependencies, pin dependencies and run deployment tests.
+- Add enforced container/dependency vulnerability scanning and SBOM generation; review findings before release.\n- Run end-to-end, load, failover and restore tests in a non-production AWS environment.\n- Add production alerting, log retention/ILM policies, secret rotation, backup monitoring and a documented incident/rollback process.
 - Add a staged rollout/approval process for production and a rollback procedure.
 - Estimate costs before apply: EKS nodes, NAT gateways, Multi-AZ RDS, load balancers and Elastic storage all incur charges.
 
